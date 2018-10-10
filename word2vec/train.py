@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 """
+Train word2vec model.
 """
 import os
 import datetime
 import random
 import time
 import h5py
+import argparse
 import numpy as np
 from gensim.corpora import Dictionary
 
@@ -23,18 +25,15 @@ def ts_rand():
     return '%s_%d' % (ts, random_num)
 
 
-def main():
-
-    checkpoint_base_dir = '/tmp/w2v_models'
+def run(dataset_path, vocab_path, model_dir):
 
     print('Load vocabulary')
-    vocab = Dictionary.load('dewiki_vocab=10000/vocab.pkl')
+    vocab = Dictionary.load(vocab_path)
     vocab_size = len(vocab.token2id)
     print('vocab_size:', vocab_size)
 
-    filename = 'dewiki_vocab=10000/dataset.hdf5'
-    print('Load ', filename)
-    f = h5py.File(filename, 'r')
+    print('Load', dataset_path)
+    f = h5py.File(dataset_path, 'r')
 
     X_train = f['x_train'].value
     y_train = f['y_train'].value
@@ -42,9 +41,10 @@ def main():
     print('X_train.shape:', X_train.shape)
     print('y_train.shape:', y_train.shape)
 
-    print('Cutoff train data')
-    X_train = X_train[:10000000,:]
-    y_train = y_train[:10000000]
+    max_train_size = 10000000
+    print('Cutoff train data to %d examples' % max_train_size)
+    X_train = X_train[:max_train_size,:]
+    y_train = y_train[:max_train_size]
 
     print('X_train.shape:', X_train.shape)
     print('y_train.shape:', y_train.shape)
@@ -69,8 +69,6 @@ def main():
 
     # The embedding layer output is fed into `win_size` lambda layers that 
     # each outputs a word vector.
-
-    # TODO refactor this to a for loop, that is more readable
     sliced_word_vector = [Lambda(lambda x: x[:,i,:], output_shape=(vec_dims,))(word_vectors) for i in range(win_size)]
 
     # Aggregate the word vectors
@@ -111,7 +109,7 @@ def main():
 
         print('epoch %d: loss=%f acc=%f time=%f' % (epoch, loss, acc, mean_epoch_time))
 
-        checkpoint_dir = os.path.join(checkpoint_base_dir, ts_rand())
+        checkpoint_dir = os.path.join(model_dir, ts_rand())
         os.makedirs(checkpoint_dir, exist_ok=True)
         checkpoint_path = os.path.join(checkpoint_dir, 'w2v_model.h5')
         print('Save model:', checkpoint_path)
@@ -119,4 +117,9 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset-path', help='Train dataset path', default='./dataset.hdf5')
+    parser.add_argument('--vocab-path', help='Vocabulary path', default='./vocab.pkl')
+    parser.add_argument('--models-path', help='Output directory', default='/tmp/w2v_models')
+    args = parser.parse_args()
+    run(dataset_path=args.dataset_path, vocab_path=args.vocab_path, model_dir=args.models_path)

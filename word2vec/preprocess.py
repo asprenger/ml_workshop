@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 """
 Prepare a set of articles for training a word2vec model.
 
@@ -8,7 +7,6 @@ The following output files are generated:
     ${output_path}/vocab.pkl - A Gensim dictionary in binary format
     ${output_path}/vocab.txt - A Gensim dictionary in text format
     ${output_path}/dataset.hdf5 - A hdf5 file with keys `x_train` and `y_train`
-
 """
 import os
 import shutil
@@ -156,9 +154,9 @@ def run(input_path, output_path, stopword_path, win_size, vocab_size):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('input_path', help='Path of input text file, each line is an article')
+    parser.add_argument('--input-path', help='Input text file, each line is an article', default='./enwiki.txt')
+    parser.add_argument('--stopword-path', help='Stopwords path', default='./stopwords_english.txt')
     parser.add_argument('--output-path', help='Output directory', default='./')
-    parser.add_argument('--stopword-path', help='Stopwords path', default='./stopwords_german.txt')
     parser.add_argument('--win-size', help='Window size', type=int, default=11)
     parser.add_argument('--vocab-size', help='Size of vocabulary', type=int, default=10000)
     args = parser.parse_args()
